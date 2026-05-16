@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mollhoff Lecture Quiz — Weeks 4–6</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card: #fff;
+    --ink: #1a1a1a;
+    --muted: #666;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --good: #16a34a;
+    --bad: #dc2626;
+    --warn: #f59e0b;
+    --border: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    margin: 0;
+    padding: 16px;
+    line-height: 1.45;
+  }
+  .app { max-width: 820px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 18px; }
+  h1 { margin: 0 0 4px 0; font-size: 22px; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: 0;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: var(--accent-hover); }
+  button.secondary { background: #6b7280; }
+  button.secondary:hover { background: #4b5563; }
+  button:disabled { background: #d1d5db; cursor: not-allowed; }
+
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; gap: 12px; flex-wrap: wrap;
+  }
+  .topbar .meta { font-size: 13px; color: var(--muted); }
+  .topbar .meta strong { color: var(--ink); }
+  .progress { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+
+  .question-num { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .question-text { font-size: 16px; font-weight: 600; margin: 6px 0 16px 0; }
+  .topic-tag {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    background: #eff6ff; color: var(--accent);
+    padding: 2px 8px; border-radius: 4px; margin-left: 6px;
+  }
+
+  .options { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .option {
+    background: #f9fafb;
+    color: var(--ink);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: flex; align-items: flex-start; gap: 10px;
+    width: 100%;
+  }
+  .option .key {
+    background: #e5e7eb; padding: 2px 8px; border-radius: 4px;
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    flex-shrink: 0;
+  }
+  .option:hover:not(:disabled) { border-color: var(--accent); background: #eff6ff; }
+  .option.correct { border-color: var(--good); background: #f0fdf4; color: var(--good); font-weight: 600; }
+  .option.wrong { border-color: var(--bad); background: #fef2f2; color: var(--bad); font-weight: 600; }
+  .option:disabled { cursor: not-allowed; opacity: 0.9; }
+
+  .feedback {
+    margin-top: 14px; padding: 10px 14px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+  }
+  .feedback.correct { background: #f0fdf4; color: var(--good); border: 1px solid #86efac; }
+  .feedback.wrong   { background: #fef2f2; color: var(--bad);  border: 1px solid #fca5a5; }
+
+  .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  /* Setup screen */
+  .setup-options { display: grid; gap: 12px; margin: 16px 0; }
+  .setup-options label {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; background: #f9fafb; font-size: 14px;
+  }
+  .setup-options label:hover { background: #eff6ff; border-color: var(--accent); }
+  .setup-options input { margin: 0; }
+
+  /* Results */
+  .score-big {
+    text-align: center; font-size: 56px; font-weight: 800; color: var(--accent);
+    margin: 8px 0;
+  }
+  .score-detail { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+  .score-pct { font-size: 18px; color: var(--ink); font-weight: 600; }
+
+  .topic-list { margin: 12px 0; }
+  .topic-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px; background: #fff;
+  }
+  .topic-name { flex: 1; font-weight: 600; font-size: 14px; }
+  .topic-bar { flex: 2; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .topic-bar-fill { height: 100%; transition: width 0.4s; }
+  .topic-score { font-size: 13px; color: var(--muted); min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .weak-banner {
+    background: #fffbeb; border: 1px solid var(--warn); color: #92400e;
+    padding: 12px 14px; border-radius: 8px; margin: 14px 0; font-size: 14px;
+  }
+  .strong-banner {
+    background: #f0fdf4; border: 1px solid var(--good); color: #166534;
+    padding: 12px 14px; border-radius: 8px; margin: 14px 0; font-size: 14px;
+  }
+
+  .review-section { margin-top: 20px; }
+  .review-section h3 { font-size: 15px; margin: 0 0 10px 0; }
+  .review-item {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 8px; background: #fff;
+    font-size: 13px;
+  }
+  .review-item .q { font-weight: 600; margin-bottom: 6px; }
+  .review-item .yours { color: var(--bad); }
+  .review-item .right { color: var(--good); }
+
+  .back-link {
+    display: inline-block; margin-top: 8px; font-size: 13px; color: var(--muted);
+    text-decoration: none;
+  }
+  .back-link:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Mollhoff Lecture Quiz</h1>
+    <div class="subtitle">Weeks 4–6 · Tissues · Histology · Integumentary System</div>
+  </header>
+
+  <!-- Setup screen -->
+  <div id="setup" class="card">
+    <h2 style="margin-top:0;">Start Quiz</h2>
+    <p style="color: var(--muted); font-size: 14px;">
+      100 multiple-choice questions based on Dr. Mollhoff's lecture slides.
+      After the quiz, you can retake just the questions you missed until you get them all correct.
+    </p>
+    <div class="setup-options">
+      <label>
+        <input type="radio" name="order" value="sequential" checked />
+        Sequential order (1 → 100)
+      </label>
+      <label>
+        <input type="radio" name="order" value="shuffle" />
+        Shuffle questions
+      </label>
+    </div>
+    <div class="setup-options">
+      <label>
+        <input type="checkbox" id="showTopics" checked />
+        Show topic tags on each question
+      </label>
+      <label>
+        <input type="checkbox" id="instantFeedback" checked />
+        Reveal correct answer after each question (instant feedback)
+      </label>
+    </div>
+    <button id="startBtn">Start Quiz</button>
+    <div><a class="back-link" href="index.html">← Back to image quiz</a></div>
+  </div>
+
+  <!-- Quiz screen -->
+  <div id="quiz" class="card" style="display:none;">
+    <div class="topbar">
+      <div class="meta"><strong id="qIndex">1</strong> of <strong id="qTotal">100</strong></div>
+      <div class="meta">Correct: <strong id="qCorrect">0</strong> · Missed: <strong id="qWrong">0</strong></div>
+    </div>
+    <div class="progress"><div class="progress-fill" id="progFill"></div></div>
+
+    <div class="question-num">Question <span id="qNumDisplay">1</span><span id="topicTag" class="topic-tag"></span></div>
+    <div class="question-text" id="qText"></div>
+    <div class="options" id="qOptions"></div>
+    <div id="feedback"></div>
+    <div class="actions">
+      <button id="nextBtn" style="display:none;">Next →</button>
+      <button id="skipBtn" class="secondary">Skip</button>
+      <button id="endBtn" class="secondary">End Quiz</button>
+    </div>
+  </div>
+
+  <!-- Results screen -->
+  <div id="results" class="card" style="display:none;">
+    <h2 style="margin-top:0; text-align:center;">Round <span id="roundNum">1</span> Complete</h2>
+    <div class="score-big"><span id="finalScore">0</span>/<span id="finalTotal">0</span></div>
+    <div class="score-detail"><span class="score-pct" id="finalPct">0%</span></div>
+
+    <div id="bannerArea"></div>
+
+    <h3 style="font-size:15px;">Performance by topic</h3>
+    <div id="topicList" class="topic-list"></div>
+
+    <div class="actions" style="justify-content:center; margin-top: 20px;">
+      <button id="retakeMissedBtn">Retake Missed Questions</button>
+      <button id="restartAllBtn" class="secondary">Restart All 100</button>
+    </div>
+
+    <div class="review-section">
+      <h3>Review missed questions (<span id="missedCount">0</span>)</h3>
+      <div id="reviewList"></div>
+    </div>
+
+    <div style="text-align:center;"><a class="back-link" href="index.html">← Back to image quiz</a></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   QUESTION BANK
+   Each question: { id, topic, q, options:{A,B,C,D}, answer }
+   ============================================================ */
+const QUESTIONS = [
+  { id: 1, topic: "Histology & Embryology", q: "According to Dr. Mollhoff's lecture, what is the primary difference between histology and cytology?", options: { A: "Histology is the study of tissues, while cytology is the study of individual cells.", B: "Histology is the study of individual cells, while cytology is the study of tissues.", C: "Histology studies only diseased tissues, while cytology studies healthy tissues.", D: "Histology is the gross anatomy of organs, while cytology is the microscopic anatomy." }, answer: "A" },
+  { id: 2, topic: "Histology & Embryology", q: "Which of the following is NOT one of the three embryonic germ layers?", options: { A: "Ectoderm", B: "Mesoderm", C: "Endoderm", D: "Mesenchyme" }, answer: "D" },
+  { id: 3, topic: "Histology & Embryology", q: "In a developing embryo, which germ layer primarily differentiates into the nervous system (brain, spinal cord, nerves) and the skin surface (epidermis)?", options: { A: "Mesoderm", B: "Endoderm", C: "Ectoderm", D: "Epithelium" }, answer: "C" },
+  { id: 4, topic: "Histology & Embryology", q: "Cranial bones are unique because they develop from the ________, unlike most other bones that develop from the mesoderm.", options: { A: "Endoderm", B: "Ectoderm", C: "Epidermis", D: "Epiblast" }, answer: "B" },
+  { id: 5, topic: "Histology & Embryology", q: "If a developmental biologist used a laser to zap the endoderm of a developing embryo, which of the following structures would fail to develop?", options: { A: "The brain and spinal cord", B: "The skeletal muscles", C: "The intestinal lining and hollow organs of the GI tract", D: "The cranial bones" }, answer: "C" },
+  { id: 6, topic: "Tissue Types Overview", q: "Which of the following correctly lists the four major tissue types in the human body?", options: { A: "Epithelial, Connective, Muscle, Nervous", B: "Epithelial, Connective, Skeletal, Glandular", C: "Cartilage, Bone, Muscle, Nervous", D: "Epidermis, Dermis, Hypodermis, Fascia" }, answer: "A" },
+  { id: 7, topic: "Tissue Types Overview", q: "Which primary tissue type is characterized by tightly packed cells lining an empty space and having minimal vasculature?", options: { A: "Connective Tissue", B: "Muscle Tissue", C: "Nervous Tissue", D: "Epithelial Tissue" }, answer: "D" },
+  { id: 8, topic: "Tissue Types Overview", q: "Which primary tissue type is responsible for binding and supporting body structures, providing protection, and storing energy?", options: { A: "Epithelial Tissue", B: "Nervous Tissue", C: "Muscle Tissue", D: "Connective Tissue" }, answer: "D" },
+  { id: 9, topic: "Connective Tissue", q: "Connective tissue serves a \"transport\" function in the body. Which specific tissues are responsible for this?", options: { A: "Adipose and cartilage", B: "Blood and lymph", C: "Bone and tendons", D: "Areolar and reticular" }, answer: "B" },
+  { id: 10, topic: "Connective Tissue", q: "Which wandering cells found in connective tissue are primarily responsible for engulfing debris and pathogens?", options: { A: "Mast cells", B: "Fibroblasts", C: "Macrophages", D: "Lymphocytes" }, answer: "C" },
+  { id: 11, topic: "Connective Tissue", q: "What is the primary immune function of mast cells within connective tissue?", options: { A: "Producing antibodies", B: "Engulfing bacteria", C: "Releasing inflammatory chemicals", D: "Forming scar tissue" }, answer: "C" },
+  { id: 12, topic: "Cartilage", q: "In cartilage, mature cells called chondrocytes reside in small gel-like spaces known as:", options: { A: "Osteons", B: "Canaliculi", C: "Lacunae (\"little lakes\")", D: "Central canals" }, answer: "C" },
+  { id: 13, topic: "Cartilage", q: "Why does cartilage heal very slowly after an injury?", options: { A: "It contains too much calcium matrix", B: "It is highly innervated", C: "It is avascular (lacks blood vessels)", D: "It lacks chondrocytes" }, answer: "C" },
+  { id: 14, topic: "Cartilage", q: "Which type of cartilage is smooth and flexible, and functions to support joints?", options: { A: "Fibrocartilage", B: "Hyaline cartilage", C: "Elastic cartilage", D: "Reticular cartilage" }, answer: "B" },
+  { id: 15, topic: "Cartilage", q: "Which type of cartilage is incredibly tough, allowing it to act as a shock absorber in the body?", options: { A: "Hyaline cartilage", B: "Elastic cartilage", C: "Fibrocartilage", D: "Spongy cartilage" }, answer: "C" },
+  { id: 16, topic: "Cartilage", q: "Where in the body would you naturally find elastic cartilage?", options: { A: "Between the vertebrae", B: "The ends of long bones", C: "The ear and epiglottis", D: "The pubic symphysis" }, answer: "C" },
+  { id: 17, topic: "Bone", q: "Dense bone is organized into many columns of bone tissue that run parallel to the long axis of the bone. What are these columns called?", options: { A: "Osteons", B: "Trabeculae", C: "Chondrocytes", D: "Adipocytes" }, answer: "A" },
+  { id: 18, topic: "Bone", q: "At the center of each osteon in dense bone is a structure that contains blood vessels carrying blood to and from the bone. This is called the:", options: { A: "Lacuna", B: "Lamella", C: "Central canal", D: "Marrow cavity" }, answer: "C" },
+  { id: 19, topic: "Bone", q: "Under a microscope, spongy bone displays light \"bubbly\" areas within the red bone marrow. What cells occupy these bubbly areas?", options: { A: "Osteocytes", B: "Clusters of adipocytes (fat cells)", C: "Chondrocytes", D: "Macrophages" }, answer: "B" },
+  { id: 20, topic: "Muscle Tissue", q: "What are the four key properties of muscle tissue?", options: { A: "Secretion, absorption, filtration, protection", B: "Excitability, contractility, extensibility, elasticity", C: "Support, connection, transport, storage", D: "Innervation, avascularity, polarity, regeneration" }, answer: "B" },
+  { id: 21, topic: "Muscle Tissue", q: "The ability of muscle tissue to respond to electrical or chemical signals is known as:", options: { A: "Contractility", B: "Elasticity", C: "Extensibility", D: "Excitability" }, answer: "D" },
+  { id: 22, topic: "Muscle Tissue", q: "Which key property allows muscle tissue to return to its original resting length after being stretched?", options: { A: "Excitability", B: "Contractility", C: "Elasticity", D: "Extensibility" }, answer: "C" },
+  { id: 23, topic: "Nervous Tissue", q: "Which major tissue type is found in the brain, spinal cord, and peripheral nerves, and enables communication via impulses?", options: { A: "Epithelial Tissue", B: "Nervous Tissue", C: "Connective Tissue", D: "Muscle Tissue" }, answer: "B" },
+  { id: 24, topic: "Nervous Tissue", q: "Under a microscope, nervous tissue exhibits a distinct \"swirled and wavy\" texture. What causes this appearance?", options: { A: "The alignment of actin and myosin filaments", B: "Axons twisting, turning, and crisscrossing", C: "Parallel bundles of thick collagen fibers", D: "The concentric rings of lamellae" }, answer: "B" },
+  { id: 25, topic: "Glands & Secretion", q: "Sebaceous glands are exocrine glands associated with hair follicles. What is the specific oily substance they secrete to lubricate the skin and hair?", options: { A: "Sweat", B: "Mucus", C: "Sebum", D: "Plasma" }, answer: "C" },
+  { id: 26, topic: "Glands & Secretion", q: "Sebaceous glands function via holocrine secretion. How does this specific mechanism work?", options: { A: "The cells release their contents via exocytosis, remaining completely intact.", B: "The apical portion of the cell pinches off to release the contents.", C: "The entire cell ruptures, releasing its contents, and is replaced by new cells.", D: "The cells secrete hormones directly into the bloodstream." }, answer: "C" },
+  { id: 27, topic: "Vitamin D", q: "The integumentary system is crucial for Vitamin D synthesis. What environmental trigger initiates the formation of a Vitamin D precursor in the skin?", options: { A: "Infrared radiation", B: "Extreme heat", C: "UV-B radiation from the sun", D: "Cold temperatures" }, answer: "C" },
+  { id: 28, topic: "Vitamin D", q: "After the skin produces the Vitamin D precursor, which two organs must further process it to create the active form of Vitamin D?", options: { A: "Stomach and small intestine", B: "Liver and kidney", C: "Heart and lungs", D: "Pancreas and gallbladder" }, answer: "B" },
+  { id: 29, topic: "Vitamin D", q: "What is the specific name of the active form of Vitamin D produced by the body?", options: { A: "Calcitonin", B: "Calcitriol", C: "Carotene", D: "Cholesterol" }, answer: "B" },
+  { id: 30, topic: "Vitamin D", q: "What are the primary minerals that Vitamin D helps the body absorb?", options: { A: "Sodium and potassium", B: "Iron and zinc", C: "Calcium and phosphorus", D: "Magnesium and chloride" }, answer: "C" },
+  { id: 31, topic: "Vitamin D", q: "A severe deficiency in Vitamin D can lead to bone-softening diseases. What is this condition called in children and adults, respectively?", options: { A: "Scurvy in children; Osteoporosis in adults", B: "Rickets in children; Osteomalacia in adults", C: "Rickets in children; Arthritis in adults", D: "Osteomalacia in children; Rickets in adults" }, answer: "B" },
+  { id: 32, topic: "Vitamin D", q: "In addition to bone health, Vitamin D synthesized via the integumentary system strongly supports the function of which other body system?", options: { A: "The digestive system", B: "The immune system", C: "The respiratory system", D: "The muscular system" }, answer: "B" },
+  { id: 33, topic: "Wound Healing & Scars", q: "The first stage of wound healing is called \"Homeostasis.\" What is the primary physiological goal of this stage?", options: { A: "To build new blood vessels", B: "To stop the bleeding of the wound", C: "To trigger an autoimmune response", D: "To form a permanent scar" }, answer: "B" },
+  { id: 34, topic: "Wound Healing & Scars", q: "During the \"Inflammation\" stage of wound healing, what specific cellular action is occurring?", options: { A: "Fibroblasts rapidly multiply to form scar tissue", B: "Red blood cells clot the surface of the wound", C: "Inflammatory white blood cells move into the area to clean the wound", D: "Epidermal cells shed their nuclei" }, answer: "C" },
+  { id: 35, topic: "Wound Healing & Scars", q: "A patient has a cut that has been cleaned and bandaged, but it exhibits increased redness, swelling, and pain. According to Dr. Mollhoff's lecture, which stage of wound healing is this wound currently stuck in?", options: { A: "Homeostasis", B: "Inflammation", C: "Proliferation", D: "Remodeling" }, answer: "B" },
+  { id: 36, topic: "Wound Healing & Scars", q: "During the \"Proliferation\" stage of wound healing, what is the body actively doing?", options: { A: "Making new skin tissue and repairing broken blood vessels", B: "Constricting blood vessels to stop initial blood loss", C: "Moving white blood cells into the wound", D: "Fading the color of the final scar" }, answer: "A" },
+  { id: 37, topic: "Wound Healing & Scars", q: "The final stage of wound healing is \"Remodeling.\" What characterizes this stage?", options: { A: "The body stops initial bleeding", B: "Inflammatory chemicals peak in the bloodstream", C: "The wound fully closes and the cells used for repair are no longer necessary", D: "White blood cells actively engulf bacteria" }, answer: "C" },
+  { id: 38, topic: "Wound Healing & Scars", q: "What is the clinical definition of a keloid?", options: { A: "An ulcer caused by a loss of blood flow to the skin", B: "A malignant tumor of the melanocytes", C: "A hyperpigmented, hypertrophic scar tissue", D: "A viral infection of the epidermis" }, answer: "C" },
+  { id: 39, topic: "Wound Healing & Scars", q: "Which of the following physical surface characteristics is typical of a keloid scar?", options: { A: "Flat, pale, and perfectly smooth", B: "Raised, firm, irregular, and infiltrating into surrounding skin", C: "Sunken and lacking all pigmentation", D: "Covered in excessive hair growth" }, answer: "B" },
+  { id: 40, topic: "Integumentary System", q: "Which of the following diseases or conditions was NOT specifically listed as an integumentary system imbalance in Dr. Mollhoff's Week 6 lecture?", options: { A: "Skin cancer", B: "Burns", C: "Dermatitis", D: "Congestive heart failure" }, answer: "D" },
+  { id: 41, topic: "Connective Tissue", q: "Which tissue type provides the structural padding around soft organs and stores energy in the form of fat?", options: { A: "Nervous Tissue", B: "Adipose Tissue (Connective)", C: "Simple Squamous Epithelium", D: "Smooth Muscle Tissue" }, answer: "B" },
+  { id: 42, topic: "Bone", q: "Which component of the extracellular matrix is arranged in layers around the central canal to give an osteon its \"target-like\" appearance?", options: { A: "Lacunae", B: "Lamella", C: "Red bone marrow", D: "Elastin fibers" }, answer: "B" },
+  { id: 43, topic: "Connective Tissue", q: "Which wandering connective tissue cell type is responsible for producing immune responses such as antibodies?", options: { A: "Lymphocytes & plasma cells", B: "Chondrocytes", C: "Fibroblasts", D: "Adipocytes" }, answer: "A" },
+  { id: 44, topic: "Muscle Tissue", q: "Which type of muscle tissue is responsible for involuntary movements within hollow organs like the stomach and intestines?", options: { A: "Skeletal muscle", B: "Cardiac muscle", C: "Smooth muscle", D: "Areolar tissue" }, answer: "C" },
+  { id: 45, topic: "Tissue Types Overview", q: "Which of the four primary tissue types lines the GI tract and forms the outermost surface of the skin?", options: { A: "Epithelial Tissue", B: "Nervous Tissue", C: "Connective Tissue", D: "Muscle Tissue" }, answer: "A" },
+  { id: 46, topic: "Connective Tissue", q: "Which connective tissue component creates the \"gel-like\" matrix where chondrocytes sit?", options: { A: "Calcium salts", B: "Ground substance", C: "White blood cells", D: "Lymphocytes" }, answer: "B" },
+  { id: 47, topic: "Wound Healing & Scars", q: "The primary reason a keloid appears darker than the surrounding normal skin is because it is:", options: { A: "Hemorrhaging", B: "Hypopigmented", C: "Hyperpigmented", D: "Avascular" }, answer: "C" },
+  { id: 48, topic: "Connective Tissue", q: "Tendons, which attach muscles to bones, are classified as what type of primary tissue?", options: { A: "Muscle tissue", B: "Connective tissue", C: "Nervous tissue", D: "Epithelial tissue" }, answer: "B" },
+  { id: 49, topic: "Muscle Tissue", q: "Muscle tissue has the ability to shorten and produce force. This property is strictly defined as:", options: { A: "Excitability", B: "Elasticity", C: "Contractility", D: "Extensibility" }, answer: "C" },
+  { id: 50, topic: "Histology & Embryology", q: "During embryological development, the mesoderm differentiates into which of the following tissues?", options: { A: "The brain and spinal cord", B: "The epidermis of the skin", C: "The intestinal lining", D: "Connective tissue, muscle tissue, and bone" }, answer: "D" },
+  { id: 51, topic: "Epithelial & Membranes", q: "When observing a histological slide, what does \"polarity\" in epithelial tissues refer to?", options: { A: "The electrical charge across the cell membrane", B: "The presence of a distinct apical (free) surface and a basal (attached) surface", C: "The direction the cells move during cell division", D: "The magnetic properties of the extracellular matrix" }, answer: "B" },
+  { id: 52, topic: "Epithelial & Membranes", q: "The specialized structure that firmly attaches the basal surface of epithelial tissue to the underlying connective tissue is called the:", options: { A: "Basement membrane", B: "Synovial membrane", C: "Serous membrane", D: "Intercalated disc" }, answer: "A" },
+  { id: 53, topic: "Epithelial & Membranes", q: "An epithelium consisting of a single layer of box-like cells with central, round nuclei is classified as:", options: { A: "Simple squamous", B: "Simple columnar", C: "Simple cuboidal", D: "Stratified cuboidal" }, answer: "C" },
+  { id: 54, topic: "Epithelial & Membranes", q: "Which type of epithelium gives the false appearance of having multiple layers due to irregular cell shapes and varying nuclear heights, even though all cells touch the basement membrane?", options: { A: "Transitional epithelium", B: "Stratified squamous epithelium", C: "Simple columnar epithelium", D: "Pseudostratified columnar epithelium" }, answer: "D" },
+  { id: 55, topic: "Epithelial & Membranes", q: "The specialized simple squamous epithelium that lines the inside of blood vessels and the heart is called the:", options: { A: "Mesothelium", B: "Endothelium", C: "Epidermis", D: "Mucosa" }, answer: "B" },
+  { id: 56, topic: "Epithelial & Membranes", q: "Transitional epithelium is highly specialized to allow for stretching. Where in the body is it primarily found?", options: { A: "The respiratory tract", B: "The digestive tract", C: "The urinary bladder", D: "The blood vessels" }, answer: "C" },
+  { id: 57, topic: "Glands & Secretion", q: "What are the two major functional classifications of glands in the body?", options: { A: "Merocrine and Apocrine", B: "Endocrine and Exocrine", C: "Simple and Compound", D: "Tubular and Alveolar" }, answer: "B" },
+  { id: 58, topic: "Glands & Secretion", q: "Exocrine glands that secrete their products via exocytosis using vesicles, leaving the cell completely intact (such as eccrine sweat glands), utilize which mode of secretion?", options: { A: "Merocrine", B: "Apocrine", C: "Holocrine", D: "Paracrine" }, answer: "A" },
+  { id: 59, topic: "Glands & Secretion", q: "Which mode of exocrine secretion involves the apical portion of the cell pinching off to release its contents?", options: { A: "Merocrine", B: "Holocrine", C: "Apocrine", D: "Endocrine" }, answer: "C" },
+  { id: 60, topic: "Glands & Secretion", q: "Goblet cells are important unicellular exocrine glands found in the digestive and respiratory tracts. What do they secrete?", options: { A: "Sebum", B: "Sweat", C: "Mucus", D: "Hormones" }, answer: "C" },
+  { id: 61, topic: "Connective Tissue", q: "Which of the following is NOT one of the three main types of protein fibers found in the connective tissue extracellular matrix?", options: { A: "Collagen fibers", B: "Elastic fibers", C: "Reticular fibers", D: "Keratin fibers" }, answer: "D" },
+  { id: 62, topic: "Connective Tissue", q: "Which protein fiber gives connective tissues the ability to stretch and then return to their original shape?", options: { A: "Collagen fibers", B: "Reticular fibers", C: "Elastic fibers", D: "Fibrin fibers" }, answer: "C" },
+  { id: 63, topic: "Histology & Embryology", q: "What is the name of the embryonic stem cell tissue from which all other adult connective tissues eventually arise?", options: { A: "Endoderm", B: "Mesenchyme", C: "Ectoderm", D: "Macrophage" }, answer: "B" },
+  { id: 64, topic: "Connective Tissue", q: "Which loose connective tissue consists of a web-like arrangement of collagen and elastic fibers and acts as the \"universal packing material\" of the body?", options: { A: "Adipose tissue", B: "Areolar tissue", C: "Reticular tissue", D: "Dense regular tissue" }, answer: "B" },
+  { id: 65, topic: "Connective Tissue", q: "Which dense connective tissue features parallel bundles of collagen fibers and is the primary component of tendons and ligaments?", options: { A: "Dense regular connective tissue", B: "Dense irregular connective tissue", C: "Elastic connective tissue", D: "Areolar connective tissue" }, answer: "A" },
+  { id: 66, topic: "Connective Tissue", q: "The dermis of the skin is subjected to pulling forces from multiple directions. Because of this, it is primarily made of:", options: { A: "Dense regular connective tissue", B: "Dense irregular connective tissue", C: "Reticular connective tissue", D: "Stratified squamous epithelium" }, answer: "B" },
+  { id: 67, topic: "Cartilage", q: "In both bone and cartilage, mature cells reside in small, gel-like spaces within the extracellular matrix called:", options: { A: "Osteons", B: "Central canals", C: "Trabeculae", D: "Lacunae" }, answer: "D" },
+  { id: 68, topic: "Bone", q: "The rigid matrix of bone tissue is made exceptionally strong by the presence of collagen fibers combined with:", options: { A: "Hyaluronic acid", B: "Calcium salts", C: "Chondroitin sulfate", D: "Elastin" }, answer: "B" },
+  { id: 69, topic: "Bone", q: "In compact bone, the concentric, target-like rings of bone tissue surrounding a central canal are called:", options: { A: "Lamellae", B: "Lacunae", C: "Canaliculi", D: "Spongy bone" }, answer: "A" },
+  { id: 70, topic: "Connective Tissue", q: "The fluid ground substance of blood (a fluid connective tissue) is called:", options: { A: "Lymph", B: "Plasma", C: "Interstitial fluid", D: "Serum" }, answer: "B" },
+  { id: 71, topic: "Epithelial & Membranes", q: "Which of the following is an example of an epithelial membrane?", options: { A: "Synovial membrane", B: "Mucous membrane", C: "Fascia", D: "Cartilage" }, answer: "B" },
+  { id: 72, topic: "Epithelial & Membranes", q: "Which type of tissue membrane lines closed coelomic body cavities (such as the pleural and pericardial cavities) and produces a lubricating fluid?", options: { A: "Cutaneous membrane", B: "Mucous membrane", C: "Serous membrane", D: "Synovial membrane" }, answer: "C" },
+  { id: 73, topic: "Epithelial & Membranes", q: "Which type of membrane is composed ONLY of connective tissue and lines the cavities of freely movable joints?", options: { A: "Synovial membrane", B: "Mucous membrane", C: "Serous membrane", D: "Cutaneous membrane" }, answer: "A" },
+  { id: 74, topic: "Integumentary System", q: "In the integumentary system, the epidermis is classified as which specific type of tissue?", options: { A: "Simple squamous epithelium", B: "Pseudostratified columnar epithelium", C: "Keratinized stratified squamous epithelium", D: "Dense irregular connective tissue" }, answer: "C" },
+  { id: 75, topic: "Integumentary System", q: "The most abundant cells in the epidermis, responsible for producing the tough protein that protects the skin, are called:", options: { A: "Melanocytes", B: "Keratinocytes", C: "Langerhans cells", D: "Merkel cells" }, answer: "B" },
+  { id: 76, topic: "Integumentary System", q: "Which layer of the epidermis is the deepest and contains the actively dividing stem cells?", options: { A: "Stratum basale", B: "Stratum corneum", C: "Stratum spinosum", D: "Stratum granulosum" }, answer: "A" },
+  { id: 77, topic: "Integumentary System", q: "The clear, translucent layer of the epidermis called the stratum lucidum is uniquely found only in:", options: { A: "The lining of the stomach", B: "\"Thin skin\" covering the face", C: "\"Thick skin\" of the palms and soles", D: "The scalp" }, answer: "C" },
+  { id: 78, topic: "Integumentary System", q: "Which specialized cell in the epidermis functions as a macrophage to engulf bacteria and foreign particles?", options: { A: "Merkel cell", B: "Melanocyte", C: "Langerhans cell", D: "Fibroblast" }, answer: "C" },
+  { id: 79, topic: "Integumentary System", q: "Which specialized cell in the stratum basale acts as a sensory receptor for light touch?", options: { A: "Merkel cell", B: "Pacinian corpuscle", C: "Melanocyte", D: "Chondrocyte" }, answer: "A" },
+  { id: 80, topic: "Integumentary System", q: "The dermis contains tiny mound-like projections that interlock with the epidermis and create fingerprints. These are called:", options: { A: "Reticular fibers", B: "Dermal papillae", C: "Arrector pili", D: "Hair follicles" }, answer: "B" },
+  { id: 81, topic: "Integumentary System", q: "The hypodermis (subcutaneous layer) is located below the dermis. Which two tissues predominantly make up the hypodermis?", options: { A: "Dense regular and dense irregular tissues", B: "Areolar and adipose tissues", C: "Cartilage and bone", D: "Smooth muscle and nervous tissue" }, answer: "B" },
+  { id: 82, topic: "Integumentary System", q: "Which type of sweat gland is widely distributed across the body and produces a watery sweat specifically for thermoregulation?", options: { A: "Apocrine sweat gland", B: "Eccrine sweat gland", C: "Sebaceous gland", D: "Ceruminous gland" }, answer: "B" },
+  { id: 83, topic: "Homeostasis & Feedback", q: "In Dr. Mollhoff's lecture analogy for negative feedback, SpongeBob shivering in his freezing pineapple house represents the body's attempt to:", options: { A: "Escalate the freezing temperature", B: "Counteract a drop in temperature and restore the normal range", C: "Induce a positive feedback loop", D: "Form a blood clot" }, answer: "B" },
+  { id: 84, topic: "Homeostasis & Feedback", q: "In a negative feedback loop for body temperature regulation, if body temperature drops, the shivering muscles act as the:", options: { A: "Sensor", B: "Control Center", C: "Effector", D: "Stimulus" }, answer: "C" },
+  { id: 85, topic: "Homeostasis & Feedback", q: "Which of the following physiological processes is governed by a POSITIVE feedback loop?", options: { A: "Blood pressure regulation", B: "Glucose level regulation", C: "Blood clotting cascade", D: "Oxygen level regulation" }, answer: "C" },
+  { id: 86, topic: "Homeostasis & Feedback", q: "The physiological goal of a positive feedback loop is to:", options: { A: "Maintain absolute stability at all times", B: "Reverse the original stimulus", C: "Enhance or intensify the original stimulus until an endpoint is reached", D: "Stop hormone production entirely" }, answer: "C" },
+  { id: 87, topic: "Cell Cycle & Cancer", q: "What is the first phase of the cell cycle where a cell produces organelles and grows in size?", options: { A: "S phase", B: "G1 phase", C: "G2 phase", D: "M phase" }, answer: "B" },
+  { id: 88, topic: "Cell Cycle & Cancer", q: "During which phase of the cell cycle does DNA replication (synthesis) occur?", options: { A: "G0 phase", B: "G1 phase", C: "S phase", D: "M phase" }, answer: "C" },
+  { id: 89, topic: "Cell Cycle & Cancer", q: "If a cell fails a cell cycle checkpoint due to unrepairable DNA damage, it is programmed to undergo controlled cell death. This process is called:", options: { A: "Mitosis", B: "Necrosis", C: "Apoptosis", D: "Fibrosis" }, answer: "C" },
+  { id: 90, topic: "Cell Cycle & Cancer", q: "The failure of cell cycle checkpoints and the uncontrolled division of abnormal cells directly leads to:", options: { A: "Cancer", B: "Keloid formation", C: "Rickets", D: "Homeostasis" }, answer: "A" },
+  { id: 91, topic: "Cell Cycle & Cancer", q: "Genes that normally regulate the cell cycle, but can cause cancer if they undergo a mutation, are called:", options: { A: "Apoptotic genes", B: "Proto-oncogenes", C: "Suppressor genes", D: "Fibroblasts" }, answer: "B" },
+  { id: 92, topic: "Muscle Tissue", q: "Cardiac muscle tissue can be distinguished histologically from other muscle types by the presence of:", options: { A: "Multiple peripheral nuclei", B: "Lack of striations", C: "Intercalated discs", D: "Spindle-shaped cells" }, answer: "C" },
+  { id: 93, topic: "Muscle Tissue", q: "Smooth muscle lacks striations and is primarily found in:", options: { A: "The heart wall", B: "Tendons and ligaments", C: "The walls of hollow organs (like the stomach and intestines)", D: "Attached directly to bones" }, answer: "C" },
+  { id: 94, topic: "Tissue Types Overview", q: "Connective tissue is uniquely defined by having its cells widely dispersed within a(n):", options: { A: "Empty cavity", B: "Extracellular matrix", C: "Basement membrane", D: "Intercalated disc" }, answer: "B" },
+  { id: 95, topic: "Cartilage", q: "Why do cartilage injuries take a notoriously long time to heal compared to bone injuries?", options: { A: "Cartilage is highly innervated", B: "Cartilage lacks chondrocytes", C: "Cartilage is avascular and lacks a direct blood supply", D: "Cartilage contains too much calcium" }, answer: "C" },
+  { id: 96, topic: "Wound Healing & Scars", q: "Which of the following is NOT one of the classical cardinal signs of inflammation during wound healing?", options: { A: "Redness", B: "Swelling", C: "Pain", D: "Cyanosis (blueness)" }, answer: "D" },
+  { id: 97, topic: "Wound Healing & Scars", q: "During wound healing, the process where fibroblasts lay down a dense, random pattern of collagen fibers that restores physical integrity but NOT original function is called:", options: { A: "Regeneration", B: "Fibrosis", C: "Homeostasis", D: "Apoptosis" }, answer: "B" },
+  { id: 98, topic: "Wound Healing & Scars", q: "A raised, overgrown scar that results from the overproduction of collagen even after a wound has successfully closed is known as a:", options: { A: "Keloid", B: "Callus", C: "Melanoma", D: "Decubitus ulcer" }, answer: "A" },
+  { id: 99, topic: "Wound Healing & Scars", q: "During the remodeling phase of wound healing, what happens to the extra cells and blood vessels that were used for repair?", options: { A: "They turn into scar tissue", B: "They mutate into cancer cells", C: "They are no longer needed and disappear/undergo apoptosis", D: "They become permanently hyperpigmented" }, answer: "C" },
+  { id: 100, topic: "Homeostasis & Feedback", q: "In the cardiovascular feedback loop example provided in lecture, specialized pressure receptors in the carotid arteries detect a fall in blood pressure. These act as the:", options: { A: "Sensor / Receptor", B: "Control Center", C: "Effector", D: "Set point" }, answer: "A" },
+];
+
+/* ============================================================
+   QUIZ STATE
+   ============================================================ */
+const state = {
+  pool: [],          // questions for this round
+  idx: 0,
+  answered: [],      // { id, picked, correct }
+  missedIds: [],
+  round: 1,
+  settings: { shuffle: false, showTopics: true, instantFeedback: true },
+};
+
+/* ============================================================
+   DOM helpers
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const setupEl   = $("setup");
+const quizEl    = $("quiz");
+const resultsEl = $("results");
+
+function show(view) {
+  setupEl.style.display   = view === "setup"   ? "" : "none";
+  quizEl.style.display    = view === "quiz"    ? "" : "none";
+  resultsEl.style.display = view === "results" ? "" : "none";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function shuffleArr(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ============================================================
+   START QUIZ
+   ============================================================ */
+$("startBtn").addEventListener("click", () => {
+  state.settings.shuffle         = document.querySelector('input[name="order"]:checked').value === "shuffle";
+  state.settings.showTopics      = $("showTopics").checked;
+  state.settings.instantFeedback = $("instantFeedback").checked;
+
+  state.round = 1;
+  state.pool  = state.settings.shuffle ? shuffleArr(QUESTIONS) : QUESTIONS.slice();
+  state.idx = 0;
+  state.answered = [];
+  state.missedIds = [];
+
+  show("quiz");
+  renderQuestion();
+});
+
+/* ============================================================
+   QUIZ NAVIGATION
+   ============================================================ */
+function renderQuestion() {
+  const q = state.pool[state.idx];
+  if (!q) { finishRound(); return; }
+
+  $("qIndex").textContent = state.idx + 1;
+  $("qTotal").textContent = state.pool.length;
+  $("qCorrect").textContent = state.answered.filter(a => a.correct).length;
+  $("qWrong").textContent   = state.answered.filter(a => !a.correct).length;
+  $("progFill").style.width = ((state.idx) / state.pool.length * 100) + "%";
+
+  $("qNumDisplay").textContent = q.id;
+  $("topicTag").textContent = state.settings.showTopics ? q.topic : "";
+  $("topicTag").style.display = state.settings.showTopics ? "inline-block" : "none";
+  $("qText").textContent = q.q;
+  $("feedback").innerHTML = "";
+  $("nextBtn").style.display = "none";
+
+  const opts = $("qOptions");
+  opts.innerHTML = "";
+  ["A", "B", "C", "D"].forEach(letter => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.innerHTML = `<span class="key">${letter}</span><span>${q.options[letter]}</span>`;
+    btn.addEventListener("click", () => handleAnswer(letter, btn));
+    opts.appendChild(btn);
+  });
+}
+
+function handleAnswer(picked, btn) {
+  const q = state.pool[state.idx];
+  const correct = picked === q.answer;
+  state.answered.push({ id: q.id, picked, correct });
+  if (!correct && !state.missedIds.includes(q.id)) state.missedIds.push(q.id);
+
+  // Disable all options, mark correct/wrong
+  const optionBtns = $("qOptions").querySelectorAll(".option");
+  optionBtns.forEach(b => {
+    b.disabled = true;
+    const letter = b.querySelector(".key").textContent;
+    if (state.settings.instantFeedback) {
+      if (letter === q.answer) b.classList.add("correct");
+      else if (letter === picked) b.classList.add("wrong");
+    } else {
+      // Only highlight the user's pick neutrally
+      if (letter === picked) b.style.borderColor = "var(--accent)";
+    }
+  });
+
+  if (state.settings.instantFeedback) {
+    const fb = $("feedback");
+    if (correct) {
+      fb.className = "feedback correct";
+      fb.textContent = "Correct!";
+    } else {
+      fb.className = "feedback wrong";
+      fb.textContent = `Incorrect. Correct answer: ${q.answer}) ${q.options[q.answer]}`;
+    }
+  }
+
+  $("qCorrect").textContent = state.answered.filter(a => a.correct).length;
+  $("qWrong").textContent   = state.answered.filter(a => !a.correct).length;
+
+  $("nextBtn").style.display = "";
+  $("nextBtn").focus();
+}
+
+$("nextBtn").addEventListener("click", () => {
+  state.idx++;
+  if (state.idx >= state.pool.length) finishRound();
+  else renderQuestion();
+});
+
+$("skipBtn").addEventListener("click", () => {
+  const q = state.pool[state.idx];
+  // Treat skip as wrong so it gets retried
+  state.answered.push({ id: q.id, picked: null, correct: false });
+  if (!state.missedIds.includes(q.id)) state.missedIds.push(q.id);
+  state.idx++;
+  if (state.idx >= state.pool.length) finishRound();
+  else renderQuestion();
+});
+
+$("endBtn").addEventListener("click", () => {
+  if (confirm("End the quiz now and see your results?")) finishRound();
+});
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+function finishRound() {
+  const total = state.pool.length;
+  const correct = state.answered.filter(a => a.correct).length;
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+
+  $("roundNum").textContent = state.round;
+  $("finalScore").textContent = correct;
+  $("finalTotal").textContent = total;
+  $("finalPct").textContent = pct + "%";
+
+  // Topic breakdown — only for questions that were attempted this round
+  const byTopic = {};
+  state.pool.forEach((q, i) => {
+    const ans = state.answered[i];
+    if (!ans) return;
+    if (!byTopic[q.topic]) byTopic[q.topic] = { correct: 0, total: 0 };
+    byTopic[q.topic].total++;
+    if (ans.correct) byTopic[q.topic].correct++;
+  });
+
+  const topicEntries = Object.entries(byTopic)
+    .map(([name, s]) => ({ name, correct: s.correct, total: s.total, pct: s.correct / s.total }))
+    .sort((a, b) => a.pct - b.pct);
+
+  const weakAreas = topicEntries.filter(t => t.pct < 0.7).map(t => t.name);
+
+  const banner = $("bannerArea");
+  if (state.missedIds.length === 0) {
+    banner.innerHTML = `<div class="strong-banner">Perfect score! You got every question correct. Great work.</div>`;
+  } else if (weakAreas.length === 0) {
+    banner.innerHTML = `<div class="strong-banner">Solid round — no weak areas (all topics ≥ 70%). Retake the missed questions to lock in a perfect score.</div>`;
+  } else {
+    banner.innerHTML = `<div class="weak-banner"><strong>Weak areas (under 70%):</strong> ${weakAreas.join(" · ")}</div>`;
+  }
+
+  const topicList = $("topicList");
+  topicList.innerHTML = "";
+  topicEntries.forEach(t => {
+    const tPct = Math.round(t.pct * 100);
+    let color = "var(--good)";
+    if (t.pct < 0.7) color = "var(--bad)";
+    else if (t.pct < 0.85) color = "var(--warn)";
+    const row = document.createElement("div");
+    row.className = "topic-row";
+    row.innerHTML = `
+      <div class="topic-name">${t.name}</div>
+      <div class="topic-bar"><div class="topic-bar-fill" style="width:${tPct}%; background:${color};"></div></div>
+      <div class="topic-score">${t.correct}/${t.total} · ${tPct}%</div>
+    `;
+    topicList.appendChild(row);
+  });
+
+  // Missed-question review
+  $("missedCount").textContent = state.missedIds.length;
+  const reviewList = $("reviewList");
+  reviewList.innerHTML = "";
+  if (state.missedIds.length === 0) {
+    reviewList.innerHTML = `<div style="color:var(--muted); font-size:13px;">No missed questions to review.</div>`;
+  } else {
+    state.missedIds.forEach(id => {
+      const q = QUESTIONS.find(x => x.id === id);
+      const ans = state.answered.find(a => a.id === id);
+      const yourPick = ans && ans.picked
+        ? `${ans.picked}) ${q.options[ans.picked]}`
+        : "(skipped)";
+      const item = document.createElement("div");
+      item.className = "review-item";
+      item.innerHTML = `
+        <div class="q">Q${q.id} — ${q.q}</div>
+        <div class="yours">Your answer: ${yourPick}</div>
+        <div class="right">Correct answer: ${q.answer}) ${q.options[q.answer]}</div>
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Topic: ${q.topic}</div>
+      `;
+      reviewList.appendChild(item);
+    });
+  }
+
+  // If perfect, disable retake-missed button
+  $("retakeMissedBtn").disabled = state.missedIds.length === 0;
+  $("retakeMissedBtn").textContent = state.missedIds.length === 0
+    ? "All correct — nothing to retake"
+    : `Retake ${state.missedIds.length} Missed Question${state.missedIds.length === 1 ? "" : "s"}`;
+
+  show("results");
+}
+
+/* ============================================================
+   RETAKE / RESTART
+   ============================================================ */
+$("retakeMissedBtn").addEventListener("click", () => {
+  if (state.missedIds.length === 0) return;
+  const missedSet = new Set(state.missedIds);
+  state.pool = QUESTIONS.filter(q => missedSet.has(q.id));
+  if (state.settings.shuffle) state.pool = shuffleArr(state.pool);
+  state.idx = 0;
+  state.answered = [];
+  state.missedIds = [];
+  state.round++;
+  show("quiz");
+  renderQuestion();
+});
+
+$("restartAllBtn").addEventListener("click", () => {
+  show("setup");
+});
+</script>
+</body>
+</html>
